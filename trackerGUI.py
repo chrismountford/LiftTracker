@@ -1,5 +1,7 @@
+import MySQLConn
 try:
     import tkinter as tk
+    from tkinter import ttk
 
 except ImportError:
     raise ImportError("Built using tkinter with Python 3")
@@ -17,7 +19,7 @@ class MainWindow(tk.Frame):
         # Widgets
         self.main_label = tk.Label(self.top_left_frame, text="Main Label")
 
-        self.date_label = tk.Label(self.bottom_left_frame, text="Enter Date (dd/mm/yyyy):")
+        self.date_label = tk.Label(self.bottom_left_frame, text="Enter Date (yyyy-mm-dd):")
         self.date_entry = tk.Entry(self.bottom_left_frame)
 
         self.squat_label = tk.Label(self.bottom_left_frame, text="Enter Squat (kg): ")
@@ -29,8 +31,10 @@ class MainWindow(tk.Frame):
         self.deadlift_label = tk.Label(self.bottom_left_frame, text="Enter Deadlift (kg): ")
         self.deadlift_entry = tk.Entry(self.bottom_left_frame)
 
-        self.change_previous = tk.Button(self.bottom_left_frame, text="Update previous submission")
-        self.update = tk.Button(self.bottom_left_frame, text="Update")
+        self.change_previous = tk.Button(self.bottom_left_frame, text="Update previous submission",
+                                         command=lambda: self.create_window())
+        self.update = tk.Button(self.bottom_left_frame, text="Update",
+                                command=lambda: combine_funcs(self.update_db(), self.clear_entry_text()))
 
         self.total_label = tk.Label(self.top_right_frame, text="Current Best Total = XXX kg")
 
@@ -87,3 +91,39 @@ class MainWindow(tk.Frame):
         self.top_right_frame.grid(row=0, column=1, columnspan=3, sticky="nesw")
         self.bottom_left_frame.grid(row=1, column=0, sticky="nesw")
         self.bottom_right_frame.grid(row=1, column=1, columnspan=3, sticky="nesw")
+
+    def update_db(self):
+        date_entered = self.date_entry.get()
+        squat_entered = self.squat_entry.get()
+        bench_entered = self.bench_entry.get()
+        deadlift_entered = self.deadlift_entry.get()
+
+        MySQLConn.conn_update(date_entered, squat_entered, bench_entered, deadlift_entered)
+
+    def create_window(self):  # TODO: Can I rewrite MainWindow class so that this method can become a child class?
+        update_window = tk.Toplevel(self)
+        update_window.wm_title("Updating old entry")
+
+        update_date_label = tk.Label(update_window, text="Select a date:")
+        update_date_label.pack(side="left", fill="both")
+
+        date_picker = ttk.Combobox(update_window, width=50, height=50)
+        date_picker['values'] = MySQLConn.return_all_dates()
+        date_picker.pack(side="right", fill="both")
+
+    def clear_entry_text(self):
+        self.date_entry.delete(0, 'end')
+        self.squat_entry.delete(0, 'end')
+        self.bench_entry.delete(0, 'end')
+        self.deadlift_entry.delete(0, 'end')
+
+
+def combine_funcs(*funcs):
+    def combined_func(*args, **kwargs):
+        for f in funcs:
+            f(*args, **kwargs)
+    return combined_func
+
+
+
+
