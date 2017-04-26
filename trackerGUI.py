@@ -7,7 +7,7 @@ except ImportError:
     raise ImportError("Built using tkinter with Python 3")
 
 
-class MainWindow(tk.Frame):
+class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to be its own class
     def __init__(self, main):
         tk.Frame.__init__(self, main)
         self.main = main
@@ -34,11 +34,16 @@ class MainWindow(tk.Frame):
         self.change_previous = tk.Button(self.bottom_left_frame, text="Update previous submission",
                                          command=lambda: self.create_window())
         self.update = tk.Button(self.bottom_left_frame, text="Update",
-                                command=lambda: combine_funcs(self.update_db(), self.clear_entry_text()))
+                                command=lambda: combine_funcs(self.update_db(), self.clear_entry_text(),
+                                                              self.total_updater()))
 
-        self.total_label = tk.Label(self.top_right_frame, text="Current Best Total = XXX kg")
+        self.total_text = tk.StringVar()
+        self.total_text = "Current Best Total = {} kg".format(MySQLConn.return_best_total())
+        self.total_label = tk.Label(self.top_right_frame, text=self.total_text)
 
         self.temp_graph_widget = tk.Label(self.bottom_right_frame, text="[GRAPH GOES HERE]")
+
+        self.date_picked_value = tk.StringVar()  # For use in update submission window
 
         self.init_main_win()
 
@@ -100,16 +105,37 @@ class MainWindow(tk.Frame):
 
         MySQLConn.conn_update(date_entered, squat_entered, bench_entered, deadlift_entered)
 
-    def create_window(self):  # TODO: Can I rewrite MainWindow class so that this method can become a child class?
+    def create_window(self):  # TODO: Should I rewrite this as a class?
         update_window = tk.Toplevel(self)
-        update_window.wm_title("Updating old entry")
+        update_window.wm_title("Updating Old Entry")
 
         update_date_label = tk.Label(update_window, text="Select a date:")
-        update_date_label.pack(side="left", fill="both")
+        update_date_label.grid(row=0, column=1, sticky="nesw")
 
-        date_picker = ttk.Combobox(update_window, width=50, height=50)
-        date_picker['values'] = MySQLConn.return_all_dates()
-        date_picker.pack(side="right", fill="both")
+        self.date_picker = ttk.Combobox(update_window, width=20, height=20)
+        self.date_picker['values'] = MySQLConn.return_all_dates()
+        self.date_picker.grid(row=0, column=2, sticky="nesw")
+
+        self.date_picked_value = tk.StringVar()
+        self.date_picked_value.set(self.date_picker.get())
+
+        tk.Label(update_window, text="Squat (kg):").grid(row=1, column=0, sticky="nesw")
+        tk.Label(update_window, text="Bench Press (kg):").grid(row=1, column=1, sticky="nesw")
+        tk.Label(update_window, text="Deadlift (kg):").grid(row=1, column=2, sticky="nesw")
+
+        self.squat_update_lookup = tk.StringVar()
+        self.squat_update_lookup.set(value=MySQLConn.return_lift_value('squat', self.date_picked_value.get()))
+
+        squat_update_entry = tk.Entry(update_window)
+        bench_update_entry = tk.Entry(update_window)
+        deadlift_update_entry = tk.Entry(update_window)
+
+        squat_update_entry.grid(row=2, column=0, sticky="nesw")
+        bench_update_entry.grid(row=2, column=1, sticky="nesw")
+        deadlift_update_entry.grid(row=2, column=2, sticky="nesw")
+
+        self.date_picker.bind("<<ComboboxSelected>>",
+                              lambda x: self.date_picked_value.get())# squat_update_entry.insert(0, self.squat_update_lookup.get()))  # TODO: combine funcs for other lifts
 
     def clear_entry_text(self):
         self.date_entry.delete(0, 'end')
@@ -117,13 +143,15 @@ class MainWindow(tk.Frame):
         self.bench_entry.delete(0, 'end')
         self.deadlift_entry.delete(0, 'end')
 
+    def return_values_on_combobox_event(self, value):
+        return value.get()
+
+    def total_updater(self):  # TODO: Make dependent on user
+        self.total_label.config(text="Current Best Total = {} kg".format(MySQLConn.return_best_total()))
+
 
 def combine_funcs(*funcs):
     def combined_func(*args, **kwargs):
         for f in funcs:
             f(*args, **kwargs)
     return combined_func
-
-
-
-

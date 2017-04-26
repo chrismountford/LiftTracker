@@ -1,4 +1,5 @@
 import pymysql
+import trackerGUI
 from tkinter import messagebox
 
 conn = pymysql.connect(host='localhost',
@@ -44,4 +45,32 @@ def return_all_dates():
 
     finally:
         pass
+
+
+def return_lift_value(lift, date_picked):
+    # print(trackerGUI.MainWindow.date_picked_value.get())
+
+    try:
+        with conn.cursor() as cursor:
+            if date_picked != '':
+                cursor.execute("""
+                SELECT `{0}` FROM Lifts WHERE date = date_format("{1}", '%Y-%m-%d')
+                """.format(lift, date_picked))
+
+                lift_value_fetched = cursor.fetchone()
+
+            else:
+                lift_value_fetched = '0'
+
+            return lift_value_fetched
+
+    finally:
+        pass
+
+
+def return_best_total():
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT MAX(squat+bench+deadlift) from Lifts")
+
+        return cursor.fetchone()
 
