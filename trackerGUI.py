@@ -38,8 +38,8 @@ class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to b
                                                               self.total_updater()))
 
         self.total_text = tk.StringVar()
-        self.total_text = "Current Best Total = {} kg".format(MySQLConn.return_best_total())
-        self.total_label = tk.Label(self.top_right_frame, text=self.total_text)
+        self.total_text = "Current Best Total = {} kg"
+        self.total_label = tk.Label(self.top_right_frame, text=self.total_text.format(MySQLConn.return_best_total()))
 
         self.temp_graph_widget = tk.Label(self.bottom_right_frame, text="[GRAPH GOES HERE]")
 
@@ -147,7 +147,7 @@ class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to b
         return value.get()
 
     def total_updater(self):  # TODO: Make dependent on user
-        self.total_label.config(text="Current Best Total = {} kg".format(MySQLConn.return_best_total()))
+        self.total_label.config(text=self.total_text.format(MySQLConn.return_best_total()))
 
 
 def combine_funcs(*funcs):

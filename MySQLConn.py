@@ -70,7 +70,7 @@ def return_lift_value(lift, date_picked):
 
 def return_best_total():
     with conn.cursor() as cursor:
-        cursor.execute("SELECT MAX(squat+bench+deadlift) from Lifts")
+        cursor.execute("SELECT MAX(squat+bench+deadlift) as 'total' from Lifts")
 
-        return cursor.fetchone()
+        return cursor.fetchone()['total']
 
