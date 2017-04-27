@@ -1,5 +1,4 @@
 import pymysql
-import trackerGUI
 from tkinter import messagebox
 
 conn = pymysql.connect(host='localhost',
@@ -73,4 +72,7 @@ def return_best_total():
         cursor.execute("SELECT MAX(squat+bench+deadlift) as 'total' from Lifts")
 
         return cursor.fetchone()['total']
+
+
+
 

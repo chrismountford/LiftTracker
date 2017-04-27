@@ -1,11 +1,13 @@
+import sys
 import MySQLConn
-try:
+import Plots
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+if sys.version_info[0] < 3:
+    import Tkinter as Tk
+else:
     import tkinter as tk
-    from tkinter import ttk
-
-except ImportError:
-    raise ImportError("Built using tkinter with Python 3")
-
 
 class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to be its own class
     def __init__(self, main):
@@ -38,12 +40,19 @@ class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to b
                                                               self.total_updater()))
 
         self.total_text = tk.StringVar()
-        self.total_text = "Current Best Total = {} kg"
+        self.total_text = "Current Best Total = {} kg"  # TODO: Maybe also calculate wilks?
         self.total_label = tk.Label(self.top_right_frame, text=self.total_text.format(MySQLConn.return_best_total()))
 
-        self.temp_graph_widget = tk.Label(self.bottom_right_frame, text="[GRAPH GOES HERE]")
+        # self.temp_graph_widget = tk.Label(self.bottom_right_frame, text="[GRAPH GOES HERE]")
 
         self.date_picked_value = tk.StringVar()  # For use in update submission window
+
+        self.f = Figure(figsize=(5, 4), dpi=100)
+        self.a = self.f.add_subplot(111)
+
+        self.a.plot([1, 2, 3, 4])
+
+        self.canvas = FigureCanvasTkAgg(self.f, self.bottom_right_frame)
 
         self.init_main_win()
 
@@ -90,7 +99,8 @@ class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to b
             self.bottom_left_frame.grid_columnconfigure(col, weight=1)
 
         # Bottom-right frame
-        self.temp_graph_widget.pack(expand=1)
+        # self.temp_graph_widget.pack(expand=1)
+        self.canvas.get_tk_widget().pack(expand=1)
 
         self.top_left_frame.grid(row=0, column=0, sticky="nesw")
         self.top_right_frame.grid(row=0, column=1, columnspan=3, sticky="nesw")
