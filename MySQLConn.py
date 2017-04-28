@@ -72,7 +72,3 @@ def return_best_total():
         cursor.execute("SELECT MAX(squat+bench+deadlift) as 'total' from Lifts")
 
         return cursor.fetchone()['total']
-
-
-
-

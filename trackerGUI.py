@@ -9,6 +9,8 @@ if sys.version_info[0] < 3:
 else:
     import tkinter as tk
 
+from tkinter import ttk
+
 class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to be its own class
     def __init__(self, main):
         tk.Frame.__init__(self, main)
@@ -37,20 +39,20 @@ class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to b
                                          command=lambda: self.create_window())
         self.update = tk.Button(self.bottom_left_frame, text="Update",
                                 command=lambda: combine_funcs(self.update_db(), self.clear_entry_text(),
-                                                              self.total_updater()))
+                                                              self.total_updater(), self.graph_refresher()))
 
         self.total_text = tk.StringVar()
         self.total_text = "Current Best Total = {} kg"  # TODO: Maybe also calculate wilks?
         self.total_label = tk.Label(self.top_right_frame, text=self.total_text.format(MySQLConn.return_best_total()))
-
-        # self.temp_graph_widget = tk.Label(self.bottom_right_frame, text="[GRAPH GOES HERE]")
 
         self.date_picked_value = tk.StringVar()  # For use in update submission window
 
         self.f = Figure(figsize=(5, 4), dpi=100)
         self.a = self.f.add_subplot(111)
 
-        self.a.plot([1, 2, 3, 4])
+        self.a.plot(Plots.dates_to_plot, Plots.squats_to_plot,
+                    Plots.dates_to_plot, Plots.bench_to_plot,
+                    Plots.dates_to_plot, Plots.deadlifts_to_plot)
 
         self.canvas = FigureCanvasTkAgg(self.f, self.bottom_right_frame)
 
@@ -158,6 +160,15 @@ class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to b
 
     def total_updater(self):  # TODO: Make dependent on user
         self.total_label.config(text=self.total_text.format(MySQLConn.return_best_total()))
+
+    def graph_refresher(self):
+        ax = self.canvas.figure.axes[0]
+        ax.set_xlim(min(Plots.dates_to_plot), max(Plots.dates_to_plot))
+
+        all_lifts = Plots.squats_to_plot + Plots.bench_to_plot + Plots.deadlifts_to_plot
+        ax.set_ylim(min(all_lifts), max(all_lifts))
+
+        self.canvas.draw()
 
 
 def combine_funcs(*funcs):
