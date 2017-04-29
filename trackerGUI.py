@@ -1,58 +1,72 @@
-import sys
 import MySQLConn
 import Plots
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-if sys.version_info[0] < 3:
-    import Tkinter as Tk
-else:
-    import tkinter as tk
-
 from tkinter import ttk
+import tkinter as tk
+from tkinter import font
+
 
 class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to be its own class
     def __init__(self, main):
         tk.Frame.__init__(self, main)
         self.main = main
-        self.top_left_frame = tk.Frame(main, background="bisque")  # Colours for development purposes
-        self.top_right_frame = tk.Frame(main, background="pink")
-        self.bottom_left_frame = tk.Frame(main, background="blue")
-        self.bottom_right_frame = tk.Frame(main, background="green")
+
+        bg_col = "snow"
+        fg_col = "steel blue"
+        main_label_font = tk.font.Font(family="Helvetica", size=20, weight="bold")
+        total_font = tk.font.Font(family="Helvetica", size=20)
+        other_labels_font = tk.font.Font(family="Helvetica", size=12)
+
+        self.top_left_frame = tk.Frame(main, background=bg_col)
+        self.top_right_frame = tk.Frame(main, background=bg_col)
+        self.bottom_left_frame = tk.Frame(main, background=bg_col)
+        self.bottom_right_frame = tk.Frame(main, background=bg_col)
 
         # Widgets
-        self.main_label = tk.Label(self.top_left_frame, text="Main Label")
+        self.main_label = tk.Label(self.top_left_frame, text="Progress Tracker",
+                                   background=bg_col, foreground=fg_col, font=main_label_font)
 
-        self.date_label = tk.Label(self.bottom_left_frame, text="Enter Date (yyyy-mm-dd):")
-        self.date_entry = tk.Entry(self.bottom_left_frame)
+        self.date_label = tk.Label(self.bottom_left_frame, text="Enter Date (yyyy-mm-dd):",
+                                   background=bg_col, foreground=fg_col, font=other_labels_font)
+        self.date_entry = tk.Entry(self.bottom_left_frame, background=bg_col, foreground=fg_col)
 
-        self.squat_label = tk.Label(self.bottom_left_frame, text="Enter Squat (kg): ")
-        self.squat_entry = tk.Entry(self.bottom_left_frame)
+        self.squat_label = tk.Label(self.bottom_left_frame, text="Enter Squat (kg): ",
+                                    background=bg_col, foreground=fg_col, font=other_labels_font)
+        self.squat_entry = tk.Entry(self.bottom_left_frame, background=bg_col, foreground=fg_col)
 
-        self.bench_label = tk.Label(self.bottom_left_frame, text="Enter Bench Press (kg): ")
-        self.bench_entry = tk.Entry(self.bottom_left_frame)
+        self.bench_label = tk.Label(self.bottom_left_frame, text="Enter Bench Press (kg): ",
+                                    background=bg_col, foreground=fg_col, font=other_labels_font)
+        self.bench_entry = tk.Entry(self.bottom_left_frame, background=bg_col, foreground=fg_col)
 
-        self.deadlift_label = tk.Label(self.bottom_left_frame, text="Enter Deadlift (kg): ")
-        self.deadlift_entry = tk.Entry(self.bottom_left_frame)
+        self.deadlift_label = tk.Label(self.bottom_left_frame, text="Enter Deadlift (kg): ",
+                                       background=bg_col, foreground=fg_col, font=other_labels_font)
+        self.deadlift_entry = tk.Entry(self.bottom_left_frame, background=bg_col, foreground=fg_col)
 
-        self.change_previous = tk.Button(self.bottom_left_frame, text="Update previous submission",
+        self.change_previous = tk.Button(self.bottom_left_frame, text="Update Previous Submission", background="cadetblue1",
                                          command=lambda: self.create_window())
-        self.update = tk.Button(self.bottom_left_frame, text="Update",
+        self.update = tk.Button(self.bottom_left_frame, text="Update", background="steelblue1",
                                 command=lambda: combine_funcs(self.update_db(), self.clear_entry_text(),
                                                               self.total_updater(), self.graph_refresher()))
 
         self.total_text = tk.StringVar()
-        self.total_text = "Current Best Total = {} kg"  # TODO: Maybe also calculate wilks?
-        self.total_label = tk.Label(self.top_right_frame, text=self.total_text.format(MySQLConn.return_best_total()))
+        self.total_text = "Current Best Total:\n{} kg"  # TODO: Maybe also calculate wilks?
+        self.total_label = tk.Label(self.top_right_frame, text=self.total_text.format(MySQLConn.return_best_total()),
+                                    background=bg_col, foreground=fg_col, font=total_font)
 
         self.date_picked_value = tk.StringVar()  # For use in update submission window
 
         self.f = Figure(figsize=(5, 4), dpi=100)
-        self.a = self.f.add_subplot(111)
+        self.subplot = self.f.add_subplot(111)
 
-        self.a.plot(Plots.dates_to_plot, Plots.squats_to_plot,
-                    Plots.dates_to_plot, Plots.bench_to_plot,
-                    Plots.dates_to_plot, Plots.deadlifts_to_plot)
+        self.squat_line, = self.subplot.plot(Plots.dates_for_graph(), Plots.squats_for_graph())  # Comma turns these into tuples
+        self.bench_line, = self.subplot.plot(Plots.dates_for_graph(), Plots.benchs_for_graph())
+        self.dead_line, = self.subplot.plot(Plots.dates_for_graph(), Plots.deads_for_graph())
+
+        self.f.legend(loc="upper left", handles=[self.squat_line, self.bench_line, self.dead_line],
+                      labels=['Squat (kg)', 'Bench (kg)', 'Deadlift (kg'])
+
+        self.subplot.set_ylim(min(Plots.all_lifts)-50, max(Plots.all_lifts)+50)
 
         self.canvas = FigureCanvasTkAgg(self.f, self.bottom_right_frame)
 
@@ -162,11 +176,13 @@ class MainWindow(tk.Frame):  # TODO: Update window issue - I think it needs to b
         self.total_label.config(text=self.total_text.format(MySQLConn.return_best_total()))
 
     def graph_refresher(self):
+        self.squat_line.set_data(Plots.dates_for_graph(), Plots.squats_for_graph())
+        self.bench_line.set_data(Plots.dates_for_graph(), Plots.benchs_for_graph())
+        self.dead_line.set_data(Plots.dates_for_graph(), Plots.deads_for_graph())
         ax = self.canvas.figure.axes[0]
-        ax.set_xlim(min(Plots.dates_to_plot), max(Plots.dates_to_plot))
+        ax.set_xlim(min(Plots.dates_for_graph()), max(Plots.dates_for_graph()))
 
-        all_lifts = Plots.squats_to_plot + Plots.bench_to_plot + Plots.deadlifts_to_plot
-        ax.set_ylim(min(all_lifts), max(all_lifts))
+        ax.set_ylim(min(Plots.all_lifts)-50, max(Plots.all_lifts)+50)
 
         self.canvas.draw()
 
